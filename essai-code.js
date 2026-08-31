@@ -81,3 +81,148 @@ class EssaiDeCodeCard extends HTMLElement {
   setConfig(config) {
 
     if (!config.entity) {
+      throw new Error(
+        "Il faut préciser une entité (entity: sensor.xxx)"
+      );
+    }
+
+    this.config = config;
+
+    this._render();
+  }
+
+
+  // Home Assistant nous donne l'état de toutes les entités
+  set hass(hass) {
+
+    this._hass = hass;
+
+    this._render();
+  }
+
+
+  // Met à jour l'affichage de la carte
+  _render() {
+
+    // Si la configuration ou Home Assistant ne sont pas encore disponibles
+    if (!this.config || !this._hass) {
+      return;
+    }
+
+
+    // ------------------------------------------------------
+    // TITRE
+    // ------------------------------------------------------
+
+    this._title.textContent =
+      this.config.title || "Essai de code";
+
+
+    // ------------------------------------------------------
+    // ICÔNE
+    // ------------------------------------------------------
+
+    // Si "icon:" existe dans le YAML,
+    // on utilise cette icône.
+    //
+    // Sinon, on utilise mdi:eye.
+
+    const icon = this.config.icon || "mdi:eye";
+
+    this._icon.setAttribute("icon", icon);
+
+
+    // ------------------------------------------------------
+    // ENTITÉ
+    // ------------------------------------------------------
+
+    const entity =
+      this._hass.states[this.config.entity];
+
+
+    // Si l'entité n'existe pas
+    //On peut le lire comme : SI l'entité n'existe pas, alors affiche « Capteur introuvable » et arrête _render().
+    //Le ! signifie ici « pas ».
+    // exercie pour afficher un message en fonction de quelque chose 
+    
+    //if (!entity) {
+
+    //this._text.textContent =
+     // "Capteur introuvable";
+
+    //} else {
+
+    //this._text.textContent =
+      //"Capteur trouvé !";
+
+   //}
+
+   if (!entity) {
+
+  this._text.textContent =
+     "Capteur introuvable";
+
+  //return arret immédiatement et ne fait pas la suite   
+  return;
+  }
+     
+     
+    // Affiche l'état de l'entité
+   //const signifie simplement : Je crée une variable dont la valeur ne sera pas réassignée.
+  
+    const nom = entity.attributes.friendly_name;
+    const valeur = entity.state;
+    const unite = entity.attributes.unit_of_measurement;
+
+    this._text.textContent =
+      nom + " : " + valeur + " " + unite;
+
+  }
+
+
+  // Taille de la carte dans le dashboard
+  getCardSize() {
+    return 1;
+  }
+
+}
+
+
+// ----------------------------------------------------------
+// ENREGISTREMENT DU CUSTOM ELEMENT
+// ----------------------------------------------------------
+
+if (!customElements.get("essai-de-code-card")) {
+
+  customElements.define(
+    "essai-de-code-card",
+    EssaiDeCodeCard
+  );
+}
+
+
+// ----------------------------------------------------------
+// INFORMATIONS POUR "AJOUTER UNE CARTE"
+// ----------------------------------------------------------
+
+window.customCards = window.customCards || [];
+
+if (
+  !window.customCards.some(
+    (card) => card.type === "essai-de-code-card"
+  )
+) {
+
+  window.customCards.push({
+
+    type: "essai-de-code-card",
+
+    name: "Essai de code",
+
+    description:
+      "Ma toute première carte, pour apprendre.",
+
+    preview: true
+
+  });
+}
