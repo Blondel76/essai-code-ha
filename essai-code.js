@@ -136,36 +136,31 @@ class EssaiDeCodeCard extends HTMLElement {
     // ENTITÉ
     // ------------------------------------------------------
 
-    const entity =
-      this._hass.states[this.config.entity];
+const entity =
+  this._hass.states[this.config.entity];
 
-
-    // Si l'entité n'existe pas
-    //On peut le lire comme : SI l'entité n'existe pas, alors affiche « Capteur introuvable » et arrête _render().
-    //Le ! signifie ici « pas ».
-    // exercie pour afficher un message en fonction de quelque chose 
-    
-    //if (!entity) {
-
-    //this._text.textContent =
-     // "Capteur introuvable";
-
-    //} else {
-
-    //this._text.textContent =
-      //"Capteur trouvé !";
-
-   //}
-
-   if (!entity) {
+if (!entity) {
 
   this._text.textContent =
-     "Capteur introuvable";
+    "Capteur introuvable";
 
-  //return arret immédiatement et ne fait pas la suite   
   return;
-  }
-     
+}
+
+const valeur = parseFloat(entity.state);
+
+if (valeur > 20) {
+
+  this._text.textContent =
+    "Il fait chaud";
+
+} else {
+
+  this._text.textContent =
+    "Il fait froid";
+
+}
+
      
     // Affiche l'état de l'entité
    //const signifie simplement : Je crée une variable dont la valeur ne sera pas réassignée.
