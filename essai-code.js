@@ -14,4 +14,4 @@ class EssaiDeCodeCard extends HTMLElement {
 
 }
 //EssaiDeCodeCard c'est la classe javascript et essai-de-code nom utilisé dans le Yaml
-customElements.define("Essai-De-Code", EssaiDeCodeCard);
+customElements.define("essai-de-code", EssaiDeCodeCard);
