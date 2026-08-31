@@ -102,7 +102,7 @@ class EssaiDeCodeCard extends HTMLElement {
      * pouvoir lui dire plus tard (dans _render) QUELLE icône
      * afficher.
      */
-    this._icon = this.shadowRoot.querySelector("ha-icon");
+    this._icon.setAttribute("icon", this.config.icon || "mdi:eye");
   }
 
   setConfig(config) {
