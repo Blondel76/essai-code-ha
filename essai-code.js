@@ -11,8 +11,19 @@ class EssaiDeCodeCard extends HTMLElement {
   }
 
   setConfig(config) {
-    console.log("setConfig fonctionne !");
-    console.log(config);
+    if (!config) {
+      throw new Error("Configuration manquante");
+    }
+
+    this.config = { ...config };
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+  }
+
+  getCardSize() {
+    return 1;
   }
 
 }
