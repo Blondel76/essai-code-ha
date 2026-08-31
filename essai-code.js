@@ -136,16 +136,16 @@ class EssaiDeCodeCard extends HTMLElement {
     // ENTITÉ
     // ------------------------------------------------------
 
-const entity =
-  this._hass.states[this.config.entity];
+    const entity =
+      this._hass.states[this.config.entity];
 
-if (!entity) {
+    if (!entity) {
 
-  this._text.textContent =
-    "Capteur introuvable";
+    this._text.textContent =
+       "Capteur introuvable";
 
-  return;
-}
+     return;
+     }
 
 const valeur = parseFloat(entity.state);
 
