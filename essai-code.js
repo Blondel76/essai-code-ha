@@ -1,6 +1,6 @@
- /*
+/*
  * ==========================================================
- * MA PREMIÈRE CARTE — ÉTAPE 7 : FAIRE UNE COMPARAISON
+ * MA PREMIERE CARTE — ETAPE 8 : ELSE IF
  * ==========================================================
  *
  * Configuration YAML :
@@ -70,10 +70,15 @@ class EssaiDeCodeCard extends HTMLElement {
       </div>
     `;
 
-    // On récupère les éléments HTML dont on aura besoin
-    this._title = this.shadowRoot.querySelector(".title");
-    this._text = this.shadowRoot.querySelector(".text");
-    this._icon = this.shadowRoot.querySelector("ha-icon");
+    // On recupere les elements HTML dont on aura besoin
+    this._title =
+      this.shadowRoot.querySelector(".title");
+
+    this._text =
+      this.shadowRoot.querySelector(".text");
+
+    this._icon =
+      this.shadowRoot.querySelector("ha-icon");
   }
 
 
@@ -84,9 +89,11 @@ class EssaiDeCodeCard extends HTMLElement {
   setConfig(config) {
 
     if (!config.entity) {
+
       throw new Error(
-        "Il faut préciser une entité (entity: sensor.xxx)"
+        "Il faut preciser une entite (entity: sensor.xxx)"
       );
+
     }
 
     this.config = config;
@@ -96,7 +103,7 @@ class EssaiDeCodeCard extends HTMLElement {
 
 
   // --------------------------------------------------------
-  // ÉTAT DE HOME ASSISTANT
+  // ETAT DE HOME ASSISTANT
   // --------------------------------------------------------
 
   set hass(hass) {
@@ -116,7 +123,9 @@ class EssaiDeCodeCard extends HTMLElement {
     // Si la configuration ou Home Assistant
     // ne sont pas encore disponibles
     if (!this.config || !this._hass) {
+
       return;
+
     }
 
 
@@ -129,35 +138,34 @@ class EssaiDeCodeCard extends HTMLElement {
 
 
     // ------------------------------------------------------
-    // ICÔNE
+    // ICONE
     // ------------------------------------------------------
-
-    // Si "icon:" existe dans le YAML,
-    // on utilise cette icône.
-    //
-    // Sinon, on utilise mdi:eye.
 
     const icon =
       this.config.icon || "mdi:eye";
 
-    this._icon.setAttribute("icon", icon);
+    this._icon.setAttribute(
+      "icon",
+      icon
+    );
 
 
     // ------------------------------------------------------
-    // ENTITÉ
+    // ENTITE
     // ------------------------------------------------------
 
     const entity =
       this._hass.states[this.config.entity];
 
 
-    // Si l'entité n'existe pas
+    // Si l'entite n'existe pas
     if (!entity) {
 
       this._text.textContent =
         "Capteur introuvable";
 
       return;
+
     }
 
 
@@ -165,15 +173,10 @@ class EssaiDeCodeCard extends HTMLElement {
     // VALEUR DU CAPTEUR
     // ------------------------------------------------------
 
-    // entity.state contient la valeur du capteur.
+    // entity.state est du texte.
     //
-    // parseFloat transforme par exemple :
-    //
-    // "21.5"
-    //
-    // en :
-    //
-    // 21.5
+    // parseFloat transforme ce texte
+    // en nombre.
 
     const valeur =
       parseFloat(entity.state);
@@ -183,16 +186,20 @@ class EssaiDeCodeCard extends HTMLElement {
     // COMPARAISON
     // ------------------------------------------------------
 
-    // Si la température est supérieure à 20
-    if (valeur > 20) {
+    if (valeur < 18) {
 
       this._text.textContent =
-        "Il fait chaud";
+        "Il fait froid";
+
+    } else if (valeur <= 22) {
+
+      this._text.textContent =
+        "Temperature correcte";
 
     } else {
 
       this._text.textContent =
-        "Il fait froid";
+        "Il fait chaud";
 
     }
 
@@ -204,7 +211,9 @@ class EssaiDeCodeCard extends HTMLElement {
   // --------------------------------------------------------
 
   getCardSize() {
+
     return 1;
+
   }
 
 }
@@ -246,7 +255,7 @@ if (
     name: "Essai de code",
 
     description:
-      "Ma toute première carte, pour apprendre.",
+      "Ma toute premiere carte, pour apprendre.",
 
     preview: true
 
