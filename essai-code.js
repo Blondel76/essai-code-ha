@@ -141,18 +141,33 @@ class EssaiDeCodeCard extends HTMLElement {
 
 
     // Si l'entité n'existe pas
+    //On peut le lire comme : SI l'entité n'existe pas, alors affiche « Capteur introuvable » et arrête _render().
+    //Le ! signifie ici « pas ».
+    
     if (!entity) {
 
-      this._text.textContent =
-        "Capteur introuvable";
+    this._text.textContent =
+      "Capteur introuvable";
 
-      return;
-    }
+    } else {
+
+    this._text.textContent =
+      "Capteur trouvé !";
+
+   }
+
 
 
     // Affiche l'état de l'entité
+   //const signifie simplement : Je crée une variable dont la valeur ne sera pas réassignée.
+  
+    const nom = entity.attributes.friendly_name;
+    const valeur = entity.state;
+    const unite = entity.attributes.unit_of_measurement;
+
     this._text.textContent =
-      entity.attributes.friendly_name + " : " + entity.state + " " + entity.attributes.unit_of_measurement;
+      nom + " : " + valeur + " " + unite;
+
   }
 
 
