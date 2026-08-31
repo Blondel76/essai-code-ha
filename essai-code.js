@@ -1,10 +1,8 @@
-// Nom de la classe JavaScript
 class EssaiDeCodeCard extends HTMLElement {
 
   constructor() {
     super();
 
-    // Élément affiché dans la carte
     this.innerHTML = `
       <div>
         Bonjour !
@@ -12,12 +10,11 @@ class EssaiDeCodeCard extends HTMLElement {
     `;
   }
 
-  // Configuration de la carte
   setConfig(config) {
-    this.config = config;
+    console.log("setConfig fonctionne !");
+    console.log(config);
   }
 
 }
 
-// essai-de-code = nom du Custom Element
 customElements.define("essai-de-code", EssaiDeCodeCard);
