@@ -1,6 +1,6 @@
-/*
+ /*
  * ==========================================================
- * MA PREMIÈRE CARTE — ÉTAPE 4 : AJOUTER UNE ICÔNE
+ * MA PREMIÈRE CARTE — ÉTAPE 7 : FAIRE UNE COMPARAISON
  * ==========================================================
  *
  * Configuration YAML :
@@ -77,7 +77,10 @@ class EssaiDeCodeCard extends HTMLElement {
   }
 
 
-  // Home Assistant nous donne la configuration YAML
+  // --------------------------------------------------------
+  // CONFIGURATION
+  // --------------------------------------------------------
+
   setConfig(config) {
 
     if (!config.entity) {
@@ -92,7 +95,10 @@ class EssaiDeCodeCard extends HTMLElement {
   }
 
 
-  // Home Assistant nous donne l'état de toutes les entités
+  // --------------------------------------------------------
+  // ÉTAT DE HOME ASSISTANT
+  // --------------------------------------------------------
+
   set hass(hass) {
 
     this._hass = hass;
@@ -101,10 +107,14 @@ class EssaiDeCodeCard extends HTMLElement {
   }
 
 
-  // Met à jour l'affichage de la carte
+  // --------------------------------------------------------
+  // AFFICHAGE DE LA CARTE
+  // --------------------------------------------------------
+
   _render() {
 
-    // Si la configuration ou Home Assistant ne sont pas encore disponibles
+    // Si la configuration ou Home Assistant
+    // ne sont pas encore disponibles
     if (!this.config || !this._hass) {
       return;
     }
@@ -127,7 +137,8 @@ class EssaiDeCodeCard extends HTMLElement {
     //
     // Sinon, on utilise mdi:eye.
 
-    const icon = this.config.icon || "mdi:eye";
+    const icon =
+      this.config.icon || "mdi:eye";
 
     this._icon.setAttribute("icon", icon);
 
@@ -150,13 +161,48 @@ class EssaiDeCodeCard extends HTMLElement {
     }
 
 
-    // Affiche l'état de l'entité
-    this._text.textContent =
-      entity.state;
+    // ------------------------------------------------------
+    // VALEUR DU CAPTEUR
+    // ------------------------------------------------------
+
+    // entity.state contient la valeur du capteur.
+    //
+    // parseFloat transforme par exemple :
+    //
+    // "21.5"
+    //
+    // en :
+    //
+    // 21.5
+
+    const valeur =
+      parseFloat(entity.state);
+
+
+    // ------------------------------------------------------
+    // COMPARAISON
+    // ------------------------------------------------------
+
+    // Si la température est supérieure à 20
+    if (valeur > 20) {
+
+      this._text.textContent =
+        "Il fait chaud";
+
+    } else {
+
+      this._text.textContent =
+        "Il fait froid";
+
+    }
+
   }
 
 
-  // Taille de la carte dans le dashboard
+  // --------------------------------------------------------
+  // TAILLE DE LA CARTE
+  // --------------------------------------------------------
+
   getCardSize() {
     return 1;
   }
@@ -174,18 +220,22 @@ if (!customElements.get("essai-de-code-card")) {
     "essai-de-code-card",
     EssaiDeCodeCard
   );
+
 }
 
 
 // ----------------------------------------------------------
-// INFORMATIONS POUR "AJOUTER UNE CARTE"
+// INFORMATIONS POUR HOME ASSISTANT
 // ----------------------------------------------------------
 
-window.customCards = window.customCards || [];
+window.customCards =
+  window.customCards || [];
+
 
 if (
   !window.customCards.some(
-    (card) => card.type === "essai-de-code-card"
+    (card) =>
+      card.type === "essai-de-code-card"
   )
 ) {
 
@@ -201,4 +251,5 @@ if (
     preview: true
 
   });
+
 }
