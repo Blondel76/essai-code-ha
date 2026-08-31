@@ -152,7 +152,7 @@ class EssaiDeCodeCard extends HTMLElement {
 
     // Affiche l'état de l'entité
     this._text.textContent =
-       entity.state + " " + entity.attributes.unit_of_measurement;
+      entity.attributes.friendly_name + ":" + entity.state + " " + entity.attributes.unit_of_measurement;
   }
 
 
