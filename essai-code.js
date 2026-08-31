@@ -1,18 +1,25 @@
 /*
  * ==========================================================
- * MA PREMIÈRE CARTE — ÉTAPE 3 : LIRE UN VRAI CAPTEUR
+ * MA PREMIÈRE CARTE — ÉTAPE 4 : AJOUTER UNE ICÔNE
  * ==========================================================
  *
- * Nouveauté : au lieu d'afficher un texte fixe, la carte va
- * lire la valeur d'un capteur que TU choisis en YAML :
+ * Nouveauté : une icône à droite du titre, comme dans tes
+ * "vraies" cartes. Configurable en YAML :
  *
  *   type: custom:essai-de-code-card
  *   title: Salon
  *   entity: sensor.temperature_salon
+ *   icon: mdi:thermometer
  *
- * Et elle va se mettre à jour TOUTE SEULE dès que ce capteur
- * change de valeur dans Home Assistant — sans jamais recharger
- * la page.
+ * <ha-icon> est un élément HTML FOURNI PAR Home Assistant.
+ * Contrairement à <div> ou <span> qui existent dans tous les
+ * navigateurs, <ha-icon> n'existe QUE parce que tu es dans
+ * l'interface de Home Assistant, qui l'a déjà enregistré pour
+ * toi (un peu comme on l'a fait nous-mêmes avec
+ * customElements.define pour NOTRE carte).
+ *
+ * Il suffit de lui donner un nom d'icône Material Design
+ * Icons (format "mdi:nom-icone") pour qu'il l'affiche.
  */
 class EssaiDeCodeCard extends HTMLElement {
 
@@ -33,99 +40,86 @@ class EssaiDeCodeCard extends HTMLElement {
           color: var(--primary-text-color, #ffffff);
         }
 
+        /*
+         * NOUVEAU : .header met le titre et l'icône côte à
+         * côte, avec l'icône poussée tout à droite.
+         *
+         * display: flex transforme cette div en "conteneur
+         * flexible" : ses enfants directs (.title et .icon)
+         * se placent automatiquement en ligne, l'un à côté de
+         * l'autre, au lieu de l'un en dessous de l'autre.
+         *
+         * justify-content: space-between écarte le premier
+         * enfant tout à gauche et le dernier tout à droite.
+         */
+        .header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
         .title {
           font-size: 16px;
           font-weight: 600;
-          margin-bottom: 8px;
         }
 
         .text {
           font-size: 14px;
           color: var(--secondary-text-color, #aaaaaa);
+          margin-top: 8px;
+        }
+
+        /*
+         * NOUVEAU : on cible directement la balise ha-icon
+         * (pas une classe .icon, la balise elle-même), pour
+         * lui donner une taille et une couleur.
+         *
+         * --mdc-icon-size est une "variable CSS" propre à
+         * ha-icon : c'est SA façon à elle de se laisser
+         * redimensionner (elle ne comprendrait pas un simple
+         * width/height classique).
+         */
+        ha-icon {
+          --mdc-icon-size: 24px;
+          color: #5dade2;
         }
       </style>
 
       <div class="card">
-        <div class="title"></div>
+        <div class="header">
+          <div class="title"></div>
+          <ha-icon></ha-icon>
+        </div>
         <div class="text"></div>
       </div>
     `;
 
     this._title = this.shadowRoot.querySelector(".title");
     this._text = this.shadowRoot.querySelector(".text");
+
+    /*
+     * NOUVEAU : on garde aussi une poignée vers l'icône, pour
+     * pouvoir lui dire plus tard (dans _render) QUELLE icône
+     * afficher.
+     */
+    this._icon = this.shadowRoot.querySelector("ha-icon");
   }
 
   setConfig(config) {
-    /*
-     * NOUVEAU : une vérification.
-     * ----------------------------------------------------------
-     * setConfig() n'est appelée qu'UNE FOIS, AVANT que hass ne
-     * soit disponible. Donc à ce stade précis, impossible
-     * d'aller lire la valeur du capteur — on ne fait ici que
-     * vérifier que la config est valide, et on stocke.
-     *
-     * On en profite pour imposer que "entity" soit bien rempli :
-     * si ce n'est pas le cas, on arrête tout avec une erreur
-     * claire plutôt que de laisser la carte planter plus tard
-     * avec un message obscur.
-     */
     if (!config.entity) {
       throw new Error("Il faut préciser une entité (entity: sensor.xxx)");
     }
 
     this.config = config;
-
-    /*
-     * On appelle quand même _render() ici : si "this._hass"
-     * existe déjà (par exemple si tu modifies la config d'une
-     * carte déjà affichée), autant rafraîchir tout de suite.
-     * S'il n'existe pas encore, _render() va simplement ne
-     * rien afficher pour l'instant (voir la vérification dans
-     * _render()) — hass arrivera juste après.
-     */
     this._render();
   }
 
-  /*
-   * set hass(hass)
-   * ----------------------------------------------------------
-   * LE POINT CLÉ DE CETTE ÉTAPE.
-   *
-   * Home Assistant appelle ce setter en continu — littéralement
-   * plusieurs fois par seconde dans une maison active, dès
-   * qu'UN SEUL capteur ou UNE SEULE lumière change d'état,
-   * n'importe où dans la maison (pas seulement les tiens).
-   *
-   * "hass" est un immense objet JavaScript. La partie qui nous
-   * intéresse est "hass.states", qui contient l'état ACTUEL de
-   * absolument toutes les entités, sous la forme :
-   *
-   *   hass.states["sensor.temperature_salon"] = {
-   *     state: "21.4",
-   *     attributes: { unit_of_measurement: "°C", ... },
-   *     ...
-   *   }
-   *
-   * Comme hass arrive très souvent, on appelle _render() à
-   * CHAQUE fois — c'est normal et voulu : c'est ce qui donne
-   * l'impression que la carte "vit en direct".
-   */
   set hass(hass) {
     this._hass = hass;
     this._render();
   }
 
   _render() {
-    /*
-     * NOUVEAU : garde-fou.
-     * ----------------------------------------------------------
-     * On l'a dit : _render() peut être appelée AVANT que
-     * this.config ou this._hass existent (l'ordre exact dans
-     * lequel Home Assistant appelle setConfig() et hass() n'est
-     * pas garanti à 100%). Sans cette vérification, la ligne
-     * suivante planterait avec une erreur du type "Cannot read
-     * properties of undefined".
-     */
     if (!this.config || !this._hass) {
       return;
     }
@@ -133,36 +127,27 @@ class EssaiDeCodeCard extends HTMLElement {
     this._title.textContent = this.config.title || "Essai de code";
 
     /*
-     * ALLER CHERCHER LE CAPTEUR
+     * NOUVEAU : choix de l'icône, AVEC valeur par défaut.
      * ----------------------------------------------------------
-     * this.config.entity contient le nom de l'entité que TU as
-     * écrit en YAML (ex: "sensor.temperature_salon").
+     * Exactement le même principe que "this.config.title ||
+     * 'Essai de code'" vu à l'étape 2 : si tu n'as pas écrit
+     * "icon:" dans ton YAML, on utilise une icône par défaut
+     * plutôt que de laisser un vide bizarre.
      *
-     * this._hass.states[...] permet d'aller chercher, dans le
-     * grand objet "states", l'entrée qui correspond à ce nom.
+     * this._icon.icon = "mdi:xxx" (et non setAttribute) est
+     * une autre façon d'écrire la même chose — <ha-icon>
+     * accepte les deux, ce sont juste deux syntaxes possibles
+     * pour lui donner sa valeur.
      */
+    this._icon.icon = this.config.icon || "mdi:eye";
+
     const entity = this._hass.states[this.config.entity];
 
-    /*
-     * SÉCURITÉ : et si le capteur n'existe pas ?
-     * ----------------------------------------------------------
-     * Une faute de frappe dans le YAML, ou un capteur qui a été
-     * supprimé/renommé, et "entity" vaudra "undefined". Sans
-     * cette vérification, la ligne d'après planterait.
-     */
     if (!entity) {
       this._text.textContent = "Capteur introuvable";
       return;
     }
 
-    /*
-     * entity.state contient TOUJOURS la valeur sous forme de
-     * texte (même pour un nombre). "21.4" et non 21.4.
-     * C'est pour ça que tes cartes précédentes utilisaient
-     * parseFloat(entity.state) quand elles avaient besoin de
-     * faire un calcul avec ce nombre. Ici, on veut juste
-     * l'afficher, donc textContent suffit tel quel.
-     */
     this._text.textContent = entity.state;
   }
 
