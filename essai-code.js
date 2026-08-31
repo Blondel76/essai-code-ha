@@ -1,21 +1,18 @@
 /*
  * ==========================================================
- * MA PREMIÈRE CARTE — ÉTAPE 2 : LA CONFIGURATION
+ * MA PREMIÈRE CARTE — ÉTAPE 3 : LIRE UN VRAI CAPTEUR
  * ==========================================================
  *
- * Nouveauté par rapport à l'étape 1 : le titre et le texte
- * ne sont plus écrits en dur dans le HTML. Ils viennent du
- * YAML que TU écris quand tu ajoutes la carte à un tableau
- * de bord, par exemple :
+ * Nouveauté : au lieu d'afficher un texte fixe, la carte va
+ * lire la valeur d'un capteur que TU choisis en YAML :
  *
  *   type: custom:essai-de-code-card
  *   title: Salon
- *   text: Tout va bien ici
+ *   entity: sensor.temperature_salon
  *
- * Pour ça, il faut comprendre UNE idée clé : la différence
- * entre "construire le HTML" (une fois) et "remplir le HTML
- * avec des valeurs" (à chaque changement). C'est LE pattern
- * que tu retrouveras dans 100% des cartes Home Assistant.
+ * Et elle va se mettre à jour TOUTE SEULE dès que ce capteur
+ * change de valeur dans Home Assistant — sans jamais recharger
+ * la page.
  */
 class EssaiDeCodeCard extends HTMLElement {
 
@@ -23,12 +20,6 @@ class EssaiDeCodeCard extends HTMLElement {
     super();
     this.attachShadow({ mode: "open" });
 
-    /*
-     * Remarque : le HTML ci-dessous ne contient PLUS le texte
-     * "Essai de code" ni "C'est ma première carte" en dur.
-     * Les <div> sont vides — on les remplira juste après, à
-     * chaque fois que setConfig() sera appelé.
-     */
     this.shadowRoot.innerHTML = `
       <style>
         :host { display: block; }
@@ -60,78 +51,119 @@ class EssaiDeCodeCard extends HTMLElement {
       </div>
     `;
 
-    /*
-     * this.shadowRoot.querySelector(".title")
-     * --------------------------------------------------------
-     * Ceci va CHERCHER dans le HTML qu'on vient de créer
-     * l'élément qui a la classe CSS "title", et le RANGE dans
-     * une variable (this._title) pour pouvoir le réutiliser
-     * plus tard, sans avoir à le rechercher à chaque fois.
-     *
-     * Pourquoi faire ça DANS le constructeur, qui ne s'exécute
-     * qu'une seule fois ? Parce que chercher un élément dans
-     * le HTML ("querySelector") coûte un (tout petit) peu de
-     * temps. Autant le faire une seule fois et garder le
-     * résultat sous la main, plutôt que de le refaire à
-     * chaque mise à jour.
-     */
     this._title = this.shadowRoot.querySelector(".title");
     this._text = this.shadowRoot.querySelector(".text");
   }
 
-  /*
-   * setConfig(config)
-   * ----------------------------------------------------------
-   * Rappel : Home Assistant appelle cette fonction une fois,
-   * avec ton YAML transformé en objet JavaScript. Si tu as
-   * écrit :
-   *   title: Salon
-   *   text: Tout va bien ici
-   *
-   * alors ici, config vaut : { title: "Salon", text: "Tout va bien ici" }
-   */
   setConfig(config) {
+    /*
+     * NOUVEAU : une vérification.
+     * ----------------------------------------------------------
+     * setConfig() n'est appelée qu'UNE FOIS, AVANT que hass ne
+     * soit disponible. Donc à ce stade précis, impossible
+     * d'aller lire la valeur du capteur — on ne fait ici que
+     * vérifier que la config est valide, et on stocke.
+     *
+     * On en profite pour imposer que "entity" soit bien rempli :
+     * si ce n'est pas le cas, on arrête tout avec une erreur
+     * claire plutôt que de laisser la carte planter plus tard
+     * avec un message obscur.
+     */
+    if (!config.entity) {
+      throw new Error("Il faut préciser une entité (entity: sensor.xxx)");
+    }
+
     this.config = config;
 
     /*
-     * On appelle notre propre fonction _render() (définie
-     * juste en dessous) pour aller METTRE À JOUR le texte
-     * affiché avec les nouvelles valeurs de config.
-     *
-     * Le nom "_render" n'a rien de magique — c'est juste une
-     * convention très répandue (le "_" au début signifie
-     * "fonction interne, pas censée être appelée depuis
-     * l'extérieur de la classe").
+     * On appelle quand même _render() ici : si "this._hass"
+     * existe déjà (par exemple si tu modifies la config d'une
+     * carte déjà affichée), autant rafraîchir tout de suite.
+     * S'il n'existe pas encore, _render() va simplement ne
+     * rien afficher pour l'instant (voir la vérification dans
+     * _render()) — hass arrivera juste après.
      */
     this._render();
   }
 
+  /*
+   * set hass(hass)
+   * ----------------------------------------------------------
+   * LE POINT CLÉ DE CETTE ÉTAPE.
+   *
+   * Home Assistant appelle ce setter en continu — littéralement
+   * plusieurs fois par seconde dans une maison active, dès
+   * qu'UN SEUL capteur ou UNE SEULE lumière change d'état,
+   * n'importe où dans la maison (pas seulement les tiens).
+   *
+   * "hass" est un immense objet JavaScript. La partie qui nous
+   * intéresse est "hass.states", qui contient l'état ACTUEL de
+   * absolument toutes les entités, sous la forme :
+   *
+   *   hass.states["sensor.temperature_salon"] = {
+   *     state: "21.4",
+   *     attributes: { unit_of_measurement: "°C", ... },
+   *     ...
+   *   }
+   *
+   * Comme hass arrive très souvent, on appelle _render() à
+   * CHAQUE fois — c'est normal et voulu : c'est ce qui donne
+   * l'impression que la carte "vit en direct".
+   */
   set hass(hass) {
     this._hass = hass;
-    // On pourrait aussi appeler this._render() ici si notre
-    // carte affichait une valeur venant d'un capteur — pas le
-    // cas pour l'instant, donc on se contente de stocker hass.
+    this._render();
   }
 
-  /*
-   * _render()
-   * ----------------------------------------------------------
-   * Cette fonction est le CŒUR du pattern que tu retrouveras
-   * partout : elle prend les valeurs actuelles de "config"
-   * et les affiche dans les éléments HTML qu'on a gardés en
-   * mémoire (this._title, this._text).
-   *
-   * "textContent" est la propriété qui contrôle le texte
-   * affiché à l'intérieur d'un élément HTML.
-   *
-   * Le "||" (OU) fournit une valeur PAR DÉFAUT : si tu n'as
-   * pas écrit "title:" dans ton YAML, config.title vaudra
-   * "undefined", et donc on affichera "Essai de code" à la
-   * place — la carte ne sera jamais vide par erreur.
-   */
   _render() {
+    /*
+     * NOUVEAU : garde-fou.
+     * ----------------------------------------------------------
+     * On l'a dit : _render() peut être appelée AVANT que
+     * this.config ou this._hass existent (l'ordre exact dans
+     * lequel Home Assistant appelle setConfig() et hass() n'est
+     * pas garanti à 100%). Sans cette vérification, la ligne
+     * suivante planterait avec une erreur du type "Cannot read
+     * properties of undefined".
+     */
+    if (!this.config || !this._hass) {
+      return;
+    }
+
     this._title.textContent = this.config.title || "Essai de code";
-    this._text.textContent = this.config.text || "C'est ma première carte";
+
+    /*
+     * ALLER CHERCHER LE CAPTEUR
+     * ----------------------------------------------------------
+     * this.config.entity contient le nom de l'entité que TU as
+     * écrit en YAML (ex: "sensor.temperature_salon").
+     *
+     * this._hass.states[...] permet d'aller chercher, dans le
+     * grand objet "states", l'entrée qui correspond à ce nom.
+     */
+    const entity = this._hass.states[this.config.entity];
+
+    /*
+     * SÉCURITÉ : et si le capteur n'existe pas ?
+     * ----------------------------------------------------------
+     * Une faute de frappe dans le YAML, ou un capteur qui a été
+     * supprimé/renommé, et "entity" vaudra "undefined". Sans
+     * cette vérification, la ligne d'après planterait.
+     */
+    if (!entity) {
+      this._text.textContent = "Capteur introuvable";
+      return;
+    }
+
+    /*
+     * entity.state contient TOUJOURS la valeur sous forme de
+     * texte (même pour un nombre). "21.4" et non 21.4.
+     * C'est pour ça que tes cartes précédentes utilisaient
+     * parseFloat(entity.state) quand elles avaient besoin de
+     * faire un calcul avec ce nombre. Ici, on veut juste
+     * l'afficher, donc textContent suffit tel quel.
+     */
+    this._text.textContent = entity.state;
   }
 
   getCardSize() {
